@@ -24,18 +24,27 @@
         .market-detail-section { display: none; animation: fadeIn 0.5s ease; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
         
-        /* ETF 카드 스타일 */
         .etf-pill { background: var(--card-bg); border: 1px solid var(--border); padding: 1.5rem; border-radius: 24px; cursor: grab; transition: 0.3s; }
         .etf-pill:active { cursor: grabbing; opacity: 0.5; }
         .etf-pill:hover { border-color: var(--point); transform: translateY(-4px); }
 
-        /* 포트폴리오 사이드바 스타일 */
         .portfolio-aside { position: sticky; top: 120px; height: fit-content; }
         .portfolio-window { background: #1c1c1e; border: 2px dashed #3182f6; border-radius: 32px; padding: 2rem; min-height: 400px; display: flex; flex-direction: column; }
         .portfolio-window.drag-over { background: rgba(49, 130, 246, 0.1); border-style: solid; }
-        .selected-item { background: #2c2c2e; border-radius: 16px; padding: 1rem 1.25rem; margin-bottom: 0.75rem; display: flex; justify-content: space-between; align-items: center; border: 1px solid #3e3e42; animation: fadeIn 0.3s ease; }
         
-        .chart-modal-overlay { backdrop-filter: blur(12px); background: rgba(0,0,0,0.8); display: none; position: fixed; inset: 0; align-items: center; justify-content: center; z-index: 300; }
+        .selected-item { background: #2c2c2e; border-radius: 20px; padding: 1.25rem; margin-bottom: 0.75rem; border: 1px solid #3e3e42; }
+        .weight-slider { -webkit-appearance: none; width: 100%; height: 4px; background: #3e3e42; border-radius: 2px; outline: none; }
+        .weight-slider::-webkit-slider-thumb { -webkit-appearance: none; width: 12px; height: 12px; background: #3182f6; border-radius: 50%; cursor: pointer; border: 2px solid #fff; }
+
+        .modal-overlay { backdrop-filter: blur(12px); background: rgba(0,0,0,0.8); display: none; position: fixed; inset: 0; align-items: center; justify-content: center; z-index: 500; padding: 20px; }
+        .login-input { background: #2c2c2e; border: 1px solid #3e3e42; border-radius: 16px; padding: 1rem; width: 100%; color: white; outline: none; transition: border-color 0.3s; }
+        .login-input:focus { border-color: #3182f6; }
+        
+        /* 추가: 결과 표 스타일 */
+        .result-table { width: 100%; border-collapse: separate; border-spacing: 0 8px; }
+        .result-table td { padding: 16px; background: #2c2c2e; }
+        .result-table tr td:first-child { border-radius: 16px 0 0 16px; color: #9ca3af; font-size: 0.875rem; }
+        .result-table tr td:last-child { border-radius: 0 16px 16px 0; text-align: right; font-weight: 700; color: #3182f6; }
     </style>
 </head>
 <body class="antialiased">
@@ -54,7 +63,9 @@
         </div>
         <div class="flex items-center gap-5">
             <button onclick="toggleTheme()" class="w-10 h-10 flex items-center justify-center rounded-xl bg-gray-800/50">🌙</button>
-            <button class="bg-[#3182f6] text-white px-6 py-2.5 rounded-xl text-sm font-bold active:scale-95">로그인</button>
+            <div id="authArea">
+                <button onclick="openLoginModal()" class="bg-[#3182f6] text-white px-6 py-2.5 rounded-xl text-sm font-bold active:scale-95 transition-transform">로그인</button>
+            </div>
         </div>
     </nav>
 
@@ -62,7 +73,7 @@
         <div id="contentArea" class="space-y-24">
             <section class="text-center space-y-8 py-10">
                 <h1 class="hero-title">당신의 투자성향에 맞는 ETF를<br><span class="gradient-text">직관적으로 구성할 수 있습니다</span></h1>
-                <p class="text-lg text-[var(--text-sub)] max-w-lg mx-auto leading-relaxed">데이터를 바탕으로 당신의 포트폴리오 설계를 지원합니다.</p>
+                <p class="text-lg text-[var(--text-sub)] max-w-lg mx-auto leading-relaxed">실시간 데이터를 바탕으로 최적의 포트폴리오 설계를 지원합니다.</p>
                 <div class="pt-6">
                     <button onclick="loadData('포트폴리오')" class="bg-[#3182f6] text-white px-10 py-4 rounded-full font-bold text-lg hover:scale-105 transition-transform shadow-lg shadow-blue-500/20">포트폴리오 구성하기</button>
                 </div>
@@ -79,7 +90,6 @@
                 <div class="flex-1">
                     <h2 id="sectionTitle" class="text-4xl font-bold mb-10 tracking-tight">Market Categories</h2>
                     <div id="etfGrid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"></div>
-                    
                     <div id="marketDetailArea" class="mt-20 market-detail-section">
                         <div class="flex items-center justify-between mb-8 border-b border-gray-800 pb-6">
                             <h3 id="selectedCatTitle" class="text-2xl font-bold text-[#3182f6]">Sector</h3>
@@ -90,40 +100,107 @@
                 </div>
 
                 <aside id="portfolioSidebar" class="hidden w-full lg:w-[400px] portfolio-aside">
-                    <div id="dropZone" class="portfolio-window" 
-                         ondragover="handleDragOver(event)" 
-                         ondragleave="handleDragLeave(event)" 
-                         ondrop="handleDrop(event)">
-                        
+                    <div id="dropZone" class="portfolio-window" ondragover="handleDragOver(event)" ondragleave="handleDragLeave(event)" ondrop="handleDrop(event)">
                         <div class="flex flex-col items-center mb-8">
-                            <div class="w-12 h-12 bg-gray-800 rounded-full flex items-center justify-center mb-3">👤</div>
-                            <h3 class="font-bold text-xl">내 투자 조합</h3>
-                            <p class="text-sm text-gray-500 mt-1">ETF를 이 안으로 드래그하세요</p>
+                            <div id="portfolioUserIcon" class="w-12 h-12 bg-gray-800 rounded-full flex items-center justify-center mb-3">👤</div>
+                            <h3 id="portfolioUserName" class="font-bold text-xl">내 투자 조합</h3>
+                            <p class="text-sm text-gray-500 mt-1">ETF를 드래그하여 비중을 조절하세요</p>
                         </div>
-
                         <div id="portfolioList" class="flex-1">
                             <div id="emptyMessage" class="h-40 flex items-center justify-center text-gray-600 border border-dashed border-gray-800 rounded-2xl">비어 있음</div>
                         </div>
-
-                        <button onclick="showFinalAnalysis()" class="w-full bg-[#3182f6] text-white py-5 rounded-2xl font-bold mt-8 hover:bg-blue-600 transition-all shadow-xl shadow-blue-500/20 active:scale-95">결과 보기</button>
+                        <div id="weightWarning" class="text-[11px] text-red-400 text-center mb-2 hidden font-bold">비중의 합이 100%가 아닙니다</div>
+                        <button onclick="showFinalAnalysis()" class="w-full bg-[#3182f6] text-white py-5 rounded-2xl font-bold mt-4 hover:bg-blue-600 transition-all shadow-xl shadow-blue-500/20 active:scale-95">결과 보기</button>
                     </div>
                 </aside>
             </div>
         </div>
     </main>
 
-    <div id="chartModal" class="chart-modal-overlay p-6">
-        <div class="bg-[#1c1c1e] p-8 rounded-[40px] max-w-md w-full border border-[#2c2c2e]">
-            <h3 id="chartTickerName" class="text-2xl font-bold text-white"></h3>
-            <p id="chartYieldText" class="text-3xl font-black text-[#3182f6] mt-1"></p>
-            <div class="h-48 my-6"><canvas id="etfMiniChart"></canvas></div>
-            <button onclick="closeChartModal()" class="w-full bg-[#3182f6] py-4 rounded-2xl font-bold text-white">닫기</button>
+    <div id="loginModal" class="modal-overlay">
+        <div class="bg-[#1c1c1e] p-10 rounded-[40px] max-w-sm w-full border border-[#2c2c2e] text-center shadow-2xl">
+            <div class="logo-text mb-8"><span class="text-[#3182f6]">ETF</span><span>LIVE</span></div>
+            <div class="space-y-4 mb-8">
+                <input type="text" id="loginEmail" placeholder="이메일" class="login-input">
+                <input type="password" id="loginPw" placeholder="비밀번호" class="login-input">
+            </div>
+            <button onclick="handleFakeLogin()" class="w-full bg-[#3182f6] py-4 rounded-2xl font-bold text-white hover:bg-blue-600 mb-6 active:scale-95 transition-all">로그인</button>
+            <div class="text-gray-500 text-xs flex items-center justify-center gap-4 mb-8">
+                <span class="cursor-pointer">회원가입</span><span class="w-1 h-1 bg-gray-700 rounded-full"></span><span class="cursor-pointer">비밀번호 찾기</span>
+            </div>
+            <div class="border-t border-gray-800 pt-8 space-y-3">
+                <button class="w-full bg-white text-black py-3 rounded-xl font-bold text-sm flex items-center justify-center gap-2">
+                    <img src="https://www.google.com/favicon.ico" class="w-4"> 구글로 시작하기
+                </button>
+            </div>
+            <button onclick="closeModal('loginModal')" class="mt-6 text-gray-600 text-xs">취소</button>
+        </div>
+    </div>
+
+    <div id="analysisModal" class="modal-overlay">
+        <div class="bg-[#1c1c1e] p-10 rounded-[40px] max-w-md w-full border border-[#3182f6] shadow-2xl shadow-blue-500/10 text-center">
+            <div class="w-20 h-20 bg-blue-500/10 rounded-full flex items-center justify-center mx-auto mb-6"><span class="text-4xl">🤖</span></div>
+            <h3 class="text-2xl font-bold text-white mb-2">AI 포트폴리오 분석</h3>
+            <p class="text-gray-500 text-sm mb-8">선택하신 비중을 바탕으로 산출된 미래 추정치입니다.</p>
+            
+            <div class="mb-8">
+                <table class="result-table">
+                    <tr><td>3개월 후 예상 수익률</td><td id="ai3m">+0.00%</td></tr>
+                    <tr><td>6개월 후 예상 수익률</td><td id="ai6m">+0.00%</td></tr>
+                    <tr><td>12개월 후 예상 수익률</td><td id="ai12m" class="text-2xl text-[#3182f6]">+0.00%</td></tr>
+                </table>
+            </div>
+
+            <div class="flex justify-between items-center bg-[#2c2c2e] p-4 rounded-2xl mb-8">
+                <span class="text-gray-400 text-sm">현재 가중 수익률</span>
+                <span id="resYield" class="font-black text-xl text-white">0.00%</span>
+            </div>
+            
+            <button onclick="closeModal('analysisModal')" class="w-full bg-[#3182f6] py-4 rounded-2xl font-bold text-white hover:bg-blue-600 transition-all active:scale-95">분석 완료</button>
+        </div>
+    </div>
+
+    <div id="alertModal" class="modal-overlay">
+        <div class="bg-[#1c1c1e] p-10 rounded-[40px] max-w-sm w-full border border-red-500/50 text-center">
+            <div class="w-16 h-16 bg-red-500/10 rounded-full flex items-center justify-center mx-auto mb-6"><span class="text-3xl">⚠️</span></div>
+            <h3 class="text-lg font-bold text-white mb-4" id="alertTitle">알림</h3>
+            <p class="text-gray-400 text-sm mb-8 leading-relaxed" id="alertMessage"></p>
+            <button onclick="closeModal('alertModal')" class="w-full bg-gray-800 py-4 rounded-2xl font-bold text-white hover:bg-gray-700 transition-all">확인</button>
         </div>
     </div>
 
     <script>
         let myPortfolio = [];
-        const tickerYields = {}; // 수익률 데이터 보관용
+        const tickerYields = {};
+        let isLogged = false;
+
+        function openLoginModal() { document.getElementById('loginModal').style.display = 'flex'; }
+        
+        function handleFakeLogin() {
+            const email = document.getElementById('loginEmail').value.trim();
+            const pw = document.getElementById('loginPw').value.trim();
+            if (!email || !pw) { showAlert("입력 오류", "이메일과 비밀번호를 모두 입력해 주세요."); return; }
+            isLogged = true;
+            closeModal('loginModal');
+            document.getElementById('authArea').innerHTML = `
+                <div class="flex items-center gap-3">
+                    <span class="text-sm font-bold text-gray-400">투자자님</span>
+                    <div class="w-10 h-10 rounded-xl bg-blue-500 flex items-center justify-center text-white font-bold">👤</div>
+                </div>`;
+            const userNameEl = document.getElementById('portfolioUserName');
+            const userIconEl = document.getElementById('portfolioUserIcon');
+            if(userNameEl) userNameEl.innerText = "투자자님의 조합";
+            if(userIconEl) userIconEl.classList.replace('bg-gray-800', 'bg-blue-500');
+            showAlert("환영합니다!", "성공적으로 로그인되었습니다.");
+        }
+
+        function showAlert(title, message) {
+            document.getElementById('alertTitle').innerText = title;
+            document.getElementById('alertMessage').innerText = message;
+            document.getElementById('alertModal').style.display = 'flex';
+        }
+
+        function closeModal(id) { document.getElementById(id).style.display = 'none'; }
 
         function switchView(isDynamic) {
             document.getElementById('contentArea').style.display = isDynamic ? 'none' : 'block';
@@ -139,7 +216,7 @@
         function loadMarketData(btn) {
             switchView(true); updateNav(btn);
             document.getElementById('sectionTitle').innerText = "Market Categories";
-            document.getElementById('portfolioSidebar').classList.add('hidden'); // 일반 마켓에서는 숨김
+            document.getElementById('portfolioSidebar').classList.add('hidden');
             const categories = [
                 { cat: "Market Wide", etf: "VTI, VOO, SPY", desc: "전체 시장 지수 추종", color: "blue" },
                 { cat: "Sector", etf: "XLK, XLV, XLE", desc: "IT, 바이오, 에너지 등", color: "purple" },
@@ -160,119 +237,127 @@
             document.getElementById('sectionTitle').innerText = menu;
             const isPortfolioMode = (menu === '포트폴리오');
             document.getElementById('portfolioSidebar').classList.toggle('hidden', !isPortfolioMode);
-            if(isPortfolioMode) showMarketDetail('Sector'); // 포트폴리오 클릭 시 기본 섹터 노출
+            if(isPortfolioMode) showMarketDetail('Sector');
             else loadMarketData(btn);
         }
 
         function showMarketDetail(category) {
             const area = document.getElementById('marketDetailArea');
             document.getElementById('selectedCatTitle').innerText = category;
-            
-            // 이미지 디자인 종목들
             const tickers = ["XLK", "XLV", "XLF", "XLE", "XLI", "KODEX 200", "TIGER 미국S&P500", "SOL 조선TOP3플러스"];
-            
             document.getElementById('marketEtfGrid').innerHTML = tickers.map(ticker => {
-                const randomYield = (Math.random() * 3 - 0.5).toFixed(2); // 실시간 느낌 수익률
+                const randomYield = (Math.random() * 3 - 0.5).toFixed(2);
                 tickerYields[ticker] = randomYield;
                 const colorClass = randomYield >= 0 ? 'text-[#3182f6]' : 'text-red-500';
-
-                return `
-                <div class="etf-pill" draggable="true" ondragstart="handleDragStart(event, '${ticker}')" onclick="openChart('${ticker}', '${randomYield >= 0 ? '+' : ''}${randomYield}%')">
-                    <div class="flex justify-between items-start mb-1">
-                        <span class="text-[10px] text-gray-500 font-bold uppercase">Ticker</span>
-                    </div>
+                return `<div class="etf-pill" draggable="true" ondragstart="handleDragStart(event, '${ticker}')">
+                    <div class="flex justify-between items-start mb-1"><span class="text-[10px] text-gray-500 font-bold uppercase">Ticker</span></div>
                     <h4 class="font-bold text-white text-lg">${ticker}</h4>
-                    <div class="flex justify-between items-center mt-4">
-                        <span class="text-[10px] text-gray-500">Live</span>
-                        <span class="font-black ${colorClass}">${randomYield >= 0 ? '+' : ''}${randomYield}%</span>
-                    </div>
+                    <div class="flex justify-between items-center mt-4"><span class="text-[10px] text-gray-500">Live</span><span class="font-black ${colorClass}">${randomYield >= 0 ? '+' : ''}${randomYield}%</span></div>
                 </div>`;
             }).join('');
-            
             area.style.display = 'block';
         }
 
-        // --- 드래그 앤 드롭 핵심 로직 ---
-        function handleDragStart(e, ticker) {
-            e.dataTransfer.setData("ticker", ticker);
-            e.target.style.opacity = "0.5";
-        }
-
-        function handleDragOver(e) {
-            e.preventDefault();
-            document.getElementById('dropZone').classList.add('drag-over');
-        }
-
-        function handleDragLeave(e) {
-            document.getElementById('dropZone').classList.remove('drag-over');
-        }
-
+        function handleDragStart(e, ticker) { e.dataTransfer.setData("ticker", ticker); e.target.style.opacity = "0.5"; }
+        function handleDragOver(e) { e.preventDefault(); document.getElementById('dropZone').classList.add('drag-over'); }
+        function handleDragLeave(e) { document.getElementById('dropZone').classList.remove('drag-over'); }
         function handleDrop(e) {
             e.preventDefault();
-            const zone = document.getElementById('dropZone');
-            zone.classList.remove('drag-over');
+            document.getElementById('dropZone').classList.remove('drag-over');
             const ticker = e.dataTransfer.getData("ticker");
-            
-            if (ticker && !myPortfolio.includes(ticker)) {
-                myPortfolio.push(ticker);
+            if (ticker && !myPortfolio.some(item => item.ticker === ticker)) {
+                myPortfolio.push({ ticker: ticker, weight: 0 });
+                rebalanceWeights();
                 updatePortfolioUI();
             }
+        }
+
+        function rebalanceWeights() {
+            if (myPortfolio.length === 0) return;
+            const equalWeight = Math.floor(100 / myPortfolio.length);
+            myPortfolio.forEach((item, index) => {
+                item.weight = (index === myPortfolio.length - 1) ? (100 - (equalWeight * (myPortfolio.length - 1))) : equalWeight;
+            });
+        }
+
+        function updateWeight(ticker, newWeight) {
+            const item = myPortfolio.find(i => i.ticker === ticker);
+            if (item) {
+                item.weight = parseInt(newWeight);
+                document.getElementById(`val-${ticker}`).innerText = `${newWeight}%`;
+                checkWeightSum();
+            }
+        }
+
+        function checkWeightSum() {
+            const sum = myPortfolio.reduce((acc, cur) => acc + cur.weight, 0);
+            const warning = document.getElementById('weightWarning');
+            if (sum !== 100) {
+                warning.innerText = `현재 비중 합계: ${sum}% (100%를 맞춰주세요)`;
+                warning.classList.remove('hidden');
+            } else { warning.classList.add('hidden'); }
+            return sum === 100;
         }
 
         function updatePortfolioUI() {
             const listArea = document.getElementById('portfolioList');
             if (myPortfolio.length === 0) {
                 listArea.innerHTML = `<div id="emptyMessage" class="h-40 flex items-center justify-center text-gray-600 border border-dashed border-gray-800 rounded-2xl">비어 있음</div>`;
+                document.getElementById('weightWarning').classList.add('hidden');
                 return;
             }
-            
-            listArea.innerHTML = myPortfolio.map(t => `
-                <div class="selected-item">
-                    <span class="font-bold text-sm">${t}</span>
-                    <button onclick="removeTicker('${t}')" class="text-gray-500 hover:text-white transition-colors">✕</button>
-                </div>`).join('');
+            listArea.innerHTML = myPortfolio.map(item => `<div class="selected-item">
+                <div class="flex justify-between items-center mb-3">
+                    <span class="font-bold text-white text-sm">${item.ticker}</span>
+                    <div class="flex items-center gap-3">
+                        <span id="val-${item.ticker}" class="text-[#3182f6] font-bold text-xs">${item.weight}%</span>
+                        <button onclick="removeTicker('${item.ticker}')" class="text-gray-500 hover:text-white transition-colors text-xs">✕</button>
+                    </div>
+                </div>
+                <input type="range" min="0" max="100" value="${item.weight}" class="weight-slider" oninput="updateWeight('${item.ticker}', this.value)">
+            </div>`).join('');
+            checkWeightSum();
         }
 
         function removeTicker(ticker) {
-            myPortfolio = myPortfolio.filter(t => t !== ticker);
+            myPortfolio = myPortfolio.filter(item => item.ticker !== ticker);
+            rebalanceWeights();
             updatePortfolioUI();
         }
 
-        // --- 팝업 결과 보기 기능 ---
+        /* 수정 및 추가: 결과 보기 클릭 로직 */
         function showFinalAnalysis() {
-            if (myPortfolio.length === 0) {
-                alert("포트폴리오에 담긴 종목이 없습니다. ETF를 드래그해서 넣어주세요!");
+            // 1. 로그인 체크 (가장 먼저)
+            if (!isLogged) {
+                openLoginModal();
                 return;
             }
-            
-            const count = myPortfolio.length;
-            let totalYield = 0;
-            myPortfolio.forEach(t => { totalYield += parseFloat(tickerYields[t] || 0); });
-            const avgYield = (totalYield / count).toFixed(2);
-            
-            //의 결과보기 버튼 액션
-            alert(`📝 내 포트폴리오 분석 리포트\n\n• 선택된 종목 수: ${count}개\n• 평균 실시간 수익률: ${avgYield >= 0 ? '+' : ''}${avgYield}%\n\n성공적인 투자를 응원합니다!`);
-        }
 
-        let etfChart = null;
-        function openChart(ticker, yieldVal) {
-            document.getElementById('chartTickerName').innerText = ticker;
-            document.getElementById('chartYieldText').innerText = yieldVal;
-            document.getElementById('chartModal').style.display = 'flex';
-            const ctx = document.getElementById('etfMiniChart').getContext('2d');
-            if (etfChart) etfChart.destroy();
-            etfChart = new Chart(ctx, {
-                type: 'line',
-                data: { labels: ['6일전', '5일전', '4일전', '3일전', '2일전', '어제', '오늘'], datasets: [{ data: [1.2, 0.8, 1.5, 2.1, 1.8, 2.4, 3.4], borderColor: '#3182f6', fill: true, backgroundColor: 'rgba(49, 130, 246, 0.1)', tension: 0.4, pointRadius: 4, pointBackgroundColor: '#fff' }] },
-                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { x: { grid: { display: false }, ticks: { color: '#4e5968' } }, y: { display: false } } }
+            // 2. 비중 체크
+            if (myPortfolio.length === 0) { showAlert("종목 없음", "포트폴리오에 담긴 종목이 없습니다."); return; }
+            const sum = myPortfolio.reduce((acc, cur) => acc + cur.weight, 0);
+            if (sum !== 100) { showAlert("비중 불일치", `비중의 합이 100%여야 정확한 분석이 가능합니다. (현재 ${sum}%)`); return; }
+            
+            // 3. AI 수익률 계산 (추정치 로직)
+            let weightedYield = 0;
+            myPortfolio.forEach(item => {
+                const yieldVal = parseFloat(tickerYields[item.ticker] || 0);
+                weightedYield += (yieldVal * (item.weight / 100));
             });
+            
+            // AI 추정치 산출 (기준 수익률 기반 랜덤 가중치 부여)
+            const base = weightedYield;
+            document.getElementById('ai3m').innerText = (base * 1.5 + 0.8).toFixed(2) + "%";
+            document.getElementById('ai6m').innerText = (base * 2.8 + 1.5).toFixed(2) + "%";
+            document.getElementById('ai12m').innerText = (base * 5.4 + 3.2).toFixed(2) + "%";
+            
+            document.getElementById('resYield').innerText = `${weightedYield >= 0 ? '+' : ''}${weightedYield.toFixed(2)}%`;
+            document.getElementById('analysisModal').style.display = 'flex';
         }
 
-        function closeChartModal() { document.getElementById('chartModal').style.display = 'none'; }
         function closeMarketDetail() { document.getElementById('marketDetailArea').style.display = 'none'; }
         function toggleTheme() { document.body.classList.toggle('light-mode'); }
         document.addEventListener('DOMContentLoaded', () => { switchView(false); });
     </script>
 </body>
 </html>
-
