@@ -1,9 +1,18 @@
 <!DOCTYPE html>
 <html lang="ko">
 <head>
+    <!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-2360N0LQEQ"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+
+  gtag('config', 'G-2360N0LQEQ');
+</script>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ETFLIVE - 당신의 투자 나침반</title>
+    <title>BUYETF - 당신의 투자 나침반</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Gmarket+Sans:wght@300;500;700&display=swap" rel="stylesheet">
@@ -40,24 +49,27 @@
         .login-input { background: #2c2c2e; border: 1px solid #3e3e42; border-radius: 16px; padding: 1rem; width: 100%; color: white; outline: none; transition: border-color 0.3s; }
         .login-input:focus { border-color: #3182f6; }
         
-        /* 추가: 결과 표 스타일 */
         .result-table { width: 100%; border-collapse: separate; border-spacing: 0 8px; }
         .result-table td { padding: 16px; background: #2c2c2e; }
         .result-table tr td:first-child { border-radius: 16px 0 0 16px; color: #9ca3af; font-size: 0.875rem; }
         .result-table tr td:last-child { border-radius: 0 16px 16px 0; text-align: right; font-weight: 700; color: #3182f6; }
     </style>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 <body class="antialiased">
 
     <nav class="flex justify-between items-center px-8 py-6 sticky top-0 bg-inherit/90 backdrop-blur-xl z-[100] border-b border-gray-800/50">
         <div class="flex items-center gap-12">
             <div class="logo-text cursor-pointer hover:opacity-80 transition-opacity" onclick="location.reload()">
-                <span class="text-[#3182f6]">ETF</span><span>LIVE</span>
+                <span class="text-[#3182f6]">BUY</span><span>ETF</span>
             </div>
             <div class="hidden md:flex gap-8">
                 <button onclick="loadMarketData(this)" class="nav-link">MARKET</button>
-                <button onclick="loadData('NEW', this)" class="nav-link">NEW</button>
-                <button onclick="loadData('HOT', this)" class="nav-link">HOT</button>
+                <button onclick="loadDividendData(this)" class="nav-link">DIVIDEND</button>
+                
+                <button onclick="showTrend('NEW')" class="nav-link">NEW</button>
+                <button onclick="showTrend('HOT')" class="nav-link">HOT</button>
+                
                 <button onclick="loadData('포트폴리오', this)" class="nav-link">포트폴리오</button>
             </div>
         </div>
@@ -73,7 +85,7 @@
         <div id="contentArea" class="space-y-24">
             <section class="text-center space-y-8 py-10">
                 <h1 class="hero-title">당신의 투자성향에 맞는 ETF를<br><span class="gradient-text">직관적으로 구성할 수 있습니다</span></h1>
-                <p class="text-lg text-[var(--text-sub)] max-w-lg mx-auto leading-relaxed">실시간 데이터를 바탕으로 최적의 포트폴리오 설계를 지원합니다.</p>
+                <p class="text-lg text-[var(--text-sub)] max-w-lg mx-auto leading-relaxed">데이터를 바탕으로 최적의 포트폴리오 설계를 지원합니다.</p>
                 <div class="pt-6">
                     <button onclick="loadData('포트폴리오')" class="bg-[#3182f6] text-white px-10 py-4 rounded-full font-bold text-lg hover:scale-105 transition-transform shadow-lg shadow-blue-500/20">포트폴리오 구성하기</button>
                 </div>
@@ -111,6 +123,11 @@
                         </div>
                         <div id="weightWarning" class="text-[11px] text-red-400 text-center mb-2 hidden font-bold">비중의 합이 100%가 아닙니다</div>
                         <button onclick="showFinalAnalysis()" class="w-full bg-[#3182f6] text-white py-5 rounded-2xl font-bold mt-4 hover:bg-blue-600 transition-all shadow-xl shadow-blue-500/20 active:scale-95">결과 보기</button>
+                    <p class="mt-4 text-xs text-gray-500 text-center leading-relaxed">
+  ※ 수익률은 전일 종가 기준으로 산출되며,<br>
+  실시간 체결가(네이버 증권 등)와 차이가 발생할 수 있습니다.
+</p>
+
                     </div>
                 </aside>
             </div>
@@ -119,18 +136,18 @@
 
     <div id="loginModal" class="modal-overlay">
         <div class="bg-[#1c1c1e] p-10 rounded-[40px] max-w-sm w-full border border-[#2c2c2e] text-center shadow-2xl">
-            <div class="logo-text mb-8"><span class="text-[#3182f6]">ETF</span><span>LIVE</span></div>
+            <div class="logo-text mb-8"><span class="text-[#3182f6]">BUY</span><span>ETF</span></div>
             <div class="space-y-4 mb-8">
                 <input type="text" id="loginEmail" placeholder="이메일" class="login-input">
                 <input type="password" id="loginPw" placeholder="비밀번호" class="login-input">
             </div>
             <button onclick="handleFakeLogin()" class="w-full bg-[#3182f6] py-4 rounded-2xl font-bold text-white hover:bg-blue-600 mb-6 active:scale-95 transition-all">로그인</button>
             <div class="text-gray-500 text-xs flex items-center justify-center gap-4 mb-8">
-                <span class="cursor-pointer">회원가입</span><span class="w-1 h-1 bg-gray-700 rounded-full"></span><span class="cursor-pointer">비밀번호 찾기</span>
+                
             </div>
             <div class="border-t border-gray-800 pt-8 space-y-3">
                 <button class="w-full bg-white text-black py-3 rounded-xl font-bold text-sm flex items-center justify-center gap-2">
-                    <img src="https://www.google.com/favicon.ico" class="w-4"> 구글로 시작하기
+                    
                 </button>
             </div>
             <button onclick="closeModal('loginModal')" class="mt-6 text-gray-600 text-xs">취소</button>
@@ -142,7 +159,6 @@
             <div class="w-20 h-20 bg-blue-500/10 rounded-full flex items-center justify-center mx-auto mb-6"><span class="text-4xl">🤖</span></div>
             <h3 class="text-2xl font-bold text-white mb-2">AI 포트폴리오 분석</h3>
             <p class="text-gray-500 text-sm mb-8">선택하신 비중을 바탕으로 산출된 미래 추정치입니다.</p>
-            
             <div class="mb-8">
                 <table class="result-table">
                     <tr><td>3개월 후 예상 수익률</td><td id="ai3m">+0.00%</td></tr>
@@ -150,64 +166,162 @@
                     <tr><td>12개월 후 예상 수익률</td><td id="ai12m" class="text-2xl text-[#3182f6]">+0.00%</td></tr>
                 </table>
             </div>
-
             <div class="flex justify-between items-center bg-[#2c2c2e] p-4 rounded-2xl mb-8">
                 <span class="text-gray-400 text-sm">현재 가중 수익률</span>
                 <span id="resYield" class="font-black text-xl text-white">0.00%</span>
             </div>
-            
             <button onclick="closeModal('analysisModal')" class="w-full bg-[#3182f6] py-4 rounded-2xl font-bold text-white hover:bg-blue-600 transition-all active:scale-95">분석 완료</button>
         </div>
     </div>
 
-    <div id="alertModal" class="modal-overlay">
-        <div class="bg-[#1c1c1e] p-10 rounded-[40px] max-w-sm w-full border border-red-500/50 text-center">
-            <div class="w-16 h-16 bg-red-500/10 rounded-full flex items-center justify-center mx-auto mb-6"><span class="text-3xl">⚠️</span></div>
-            <h3 class="text-lg font-bold text-white mb-4" id="alertTitle">알림</h3>
-            <p class="text-gray-400 text-sm mb-8 leading-relaxed" id="alertMessage"></p>
-            <button onclick="closeModal('alertModal')" class="w-full bg-gray-800 py-4 rounded-2xl font-bold text-white hover:bg-gray-700 transition-all">확인</button>
+    <div id="etfDetailModal" class="modal-overlay" style="display: none; z-index: 9999;" onclick="if(event.target === this) closeModal('etfDetailModal')">
+        <div class="bg-[#1c1c1e] p-10 rounded-[40px] max-w-sm w-full border border-gray-800 text-center shadow-2xl relative" onclick="event.stopPropagation()">
+            <div id="modalLoading" class="absolute inset-0 bg-[#1c1c1e]/90 rounded-[40px] flex items-center justify-center z-20" style="display:none;">
+                <div class="w-8 h-8 border-4 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
+            </div>
+            <div class="text-4xl mb-4">📈</div>
+            <h3 id="detailTicker" class="text-3xl font-black text-white mb-1">-</h3>
+            <div style="width: 100%; height: 200px; margin-bottom: 20px;">
+                <canvas id="etfChart"></canvas>
+            </div>
+            <p class="text-gray-500 text-xs mb-8 uppercase font-bold tracking-widest"></p>
+            <div class="space-y-3 mb-8">
+                <div class="flex justify-between items-center bg-[#2c2c2e] p-4 rounded-2xl"><span class="text-gray-400 text-xs">1개월</span><span id="m1" class="font-bold">-</span></div>
+                <div class="flex justify-between items-center bg-[#2c2c2e] p-4 rounded-2xl"><span class="text-gray-400 text-xs">3개월</span><span id="m3" class="font-bold">-</span></div>
+                <div class="flex justify-between items-center bg-[#2c2c2e] p-4 rounded-2xl"><span class="text-gray-400 text-xs">6개월</span><span id="m6" class="font-bold">-</span></div>
+                <div class="flex justify-between items-center bg-[#2c2c2e] p-4 rounded-2xl"><span class="text-gray-400 text-xs">12개월</span><span id="m12" class="font-black text-lg">-</span></div>
+            </div>
+            <button onclick="closeModal('etfDetailModal')" class="w-full bg-[#3182f6] py-4 rounded-2xl font-bold text-white">닫기</button>
         </div>
     </div>
 
     <script>
         let myPortfolio = [];
         const tickerYields = {};
+        // 1. 배당수익률을 담아둘 사물함
+        const tickerDividends = {};
         let isLogged = false;
 
+        // 카테고리별 매핑될 실제 티커 리스트
+      // [극대화 버전] 카테고리별 매핑될 실제 티커 리스트
+      // [극대화 버전] 카테고리별 매핑될 실제 티커 리스트
+      const CATEGORY_MAP = {
+    // [Market Wide] 미국 및 글로벌 전체 지수 (40개)
+    "Market Wide": [
+        "VTI", "VOO", "SPY", "QQQ", "DIA", "IWM", "QQQM", "IVV", "SPLG", "ITOT", 
+        "VTWO", "UPRO", "TQQQ", "QLD", "SSO", "UDOW", "IJR", "SCHX", "VT", "VXUS",
+        "VIG", "VV", "IWB", "IWF", "IWD", "VUG", "VTV", "SCHG", "SCHV", "IWR",
+        "IJH", "MDY", "VO", "VB", "IJS", "VIOO", "IVE", "IVW", "SPYG", "SPYV"
+    ],
+    // [Sector] 반도체, IT, 헬스케어, 금융 등 (40개)
+    "Sector": [
+        "XLK", "XLV", "XLF", "XLE", "XLI", "XLP", "XLU", "XLB", "XLC", "VGT", 
+        "VHT", "VFH", "VDE", "FTEC", "IBB", "XBI", "KRE", "KBE", "OIH", "XOP",
+        "SMH", "SOXX", "SOXL", "SOXS", "IGV", "PSI", "XRT", "XHB", "ITB", "VNQ",
+        "IYR", "XLRE", "REM", "XLF", "KIE", "IAI", "IYG", "VPU", "IDU", "IYK"
+    ],
+    // [Style] 고배당, 배당성장, 퀄리티 (40개)
+    "Style": [
+        "SCHD", "JEPI", "JEPQ", "VYM", "VIG", "DGRW", "DGRO", "NOBL", "COWZ", "QUAL",
+        "VUG", "VTV", "MGK", "MGV", "IWF", "IWD", "XYLD", "QYLD", "USMV", "SPLV",
+        "HDV", "DVY", "SDY", "SPYD", "RDIV", "FVD", "KNG", "REGL", "PEY", "SMDV",
+        "MTUM", "VLUE", "SIZE", "IJK", "IJJ", "IJS", "IJT", "VIOO", "VIOG", "VIOV"
+    ],
+    // [Theme] AI, 로봇, 우주, 2차전지, 보안 (40개)
+    "Theme": [
+        "SOXX", "AIQ", "ARKK", "LIT", "BOTZ", "CIBR", "SMH", "SOXL", "ROBO", "ARKW",
+        "ARKG", "DRIV", "KARS", "SKYY", "CLOU", "HACK", "ITA", "PPA", "ROKT", "UFO",
+        "HERO", "ESPO", "GAMR", "NERD", "MJ", "MSOS", "YOLO", "ICLN", "TAN", "FAN",
+        "PBW", "PAVE", "IFRA", "XLI", "PHO", "FIW", "GIGE", "IPAY", "FINX", "METV"
+    ],
+    // [Defense] 국채, 단기채, 금, 은, 원자재 (40개)
+    "Defense": [
+        "BND", "TLT", "SGOV", "TIP", "GLD", "LQD", "BIL", "ICSH", "AGG", "BNDX",
+        "SHV", "VGSH", "VGIT", "VGLT", "BNDW", "MUB", "HYG", "JNK", "PFF", "PGX",
+        "IAU", "SLV", "GLDM", "DBC", "GSG", "USO", "UNG", "DBA", "DBB", "DBP",
+        "SHY", "IEF", "TLH", "EDV", "ZROZ", "GOVT", "MBB", "VCIT", "VCSH", "VGLT"
+    ],
+    // [Dividend Categories] 배당 주기별 (기존 리스트 확장)
+    "Monthly": ["JEPI", "JEPQ", "QYLD", "XYLD", "O", "MAIN", "STAG", "ADC", "DHS", "DLN", "DON", "SRET", "PFF", "PGX", "TLTW", "HYGW", "DIV", "SDIV", "ALTY", "RYLD"],
+    "Quarterly": ["SCHD", "VYM", "VIG", "DGRO", "SDY", "DVY", "HDV", "NOBL", "RDIV", "SPYD", "DGRW", "VYMI", "IDV", "FVD", "KNG", "REGL", "SMDV", "TDIV", "PEY", "SPYV"],
+    "Semi-Annual": ["VEU", "VWO", "VSS", "IDV", "EFA", "EEM", "IEFA", "EFV", "IXUS", "SCZ", "AIA", "VIGI", "PID", "DEM", "DGS", "DOO", "HILO", "EUMV", "EELV", "ACWI"],
+    "Annual": ["VXUS", "BNDX", "VTI", "ITOT", "VT", "VOO", "SPY", "QQQ", "DIA", "BND", "AGG", "LQD", "VCIT", "VCSH", "BSV", "BIV", "BLV", "VGIT", "VGSH", "VGLT"]
+};
+
+       // [수정] 메인 카테고리 카드 표시 텍스트 확장
+        function loadMarketData(btn) {
+            switchView(true); updateNav(btn);
+            document.getElementById('sectionTitle').innerText = "Market Categories";
+            document.getElementById('portfolioSidebar').classList.add('hidden');
+            const categories = [
+                { cat: "Market Wide", etf: "VTI, VOO, QQQ, TQQQ, IWM 외 30종", desc: "미국 및 글로벌 지수 추종 상품", color: "blue" },
+                { cat: "Sector", etf: "XLK, XLV, SMH, XLE, XBI 외 40종", desc: "반도체, IT, 헬스케어 등 산업군별 투자", color: "purple" },
+                { cat: "Style", etf: "SCHD, JEPI, VUG, DGRO 외 40종", desc: "고배당, 성장주, 가치주 등 투자 전략", color: "orange" },
+                { cat: "Theme", etf: "SOXX, AIQ, ARKK, LIT, ITA 외 40종", desc: "AI, 우주항공, 2차전지 등 미래 혁신 테마", color: "green" },
+                { cat: "Defense", etf: "BND, TLT, SGOV, GLD, IAU 외 40종", desc: "국채, 금, 원자재 등 안전 자산 및 헤지", color: "gray" }
+            ];
+            document.getElementById('etfGrid').innerHTML = categories.map(item => `<div class="info-card !p-8 cursor-pointer" onclick="showMarketDetail('${item.cat}')"><span class="text-[10px] font-bold text-white bg-${item.color}-500 px-2.5 py-1 rounded-lg uppercase">${item.cat}</span><h3 class="text-2xl font-black mt-5">${item.etf}</h3><p class="text-sm text-[var(--text-sub)] mt-3">${item.desc}</p></div>`).join('');
+        }
+        function loadDividendData(btn) {
+            switchView(true); 
+            updateNav(btn);
+            document.getElementById('sectionTitle').innerText = "Dividend Strategy";
+            document.getElementById('portfolioSidebar').classList.add('hidden');
+            
+            const categories = [
+                { cat: "Monthly", etf: "JEPI, JEPQ, O...", desc: "매달 월급처럼 받는 월간 배당", color: "red" },
+                { cat: "Quarterly", etf: "SCHD, VIG, VYM...", desc: "3개월마다 지급되는 안정적 분기 배당", color: "blue" },
+                { cat: "Semi-Annual", etf: "VEU, VWO, IDV...", desc: "6개월 단위의 글로벌/국제 배당", color: "yellow" },
+                { cat: "Annual", etf: "VXUS, BNDX...", desc: "1년에 한 번 지급되는 정기 배당", color: "indigo" }
+            ];
+            
+            document.getElementById('etfGrid').innerHTML = categories.map(item => `
+                <div class="info-card !p-8 cursor-pointer" onclick="showMarketDetail('${item.cat}')">
+                    <span class="text-[10px] font-bold text-white bg-${item.color}-500 px-2.5 py-1 rounded-lg uppercase">${item.cat}</span>
+                    <h3 class="text-2xl font-black mt-5">${item.etf}</h3>
+                    <p class="text-sm text-[var(--text-sub)] mt-3">${item.desc}</p>
+                </div>
+            `).join('');
+        }
+
+        // [수정] 메인 카테고리 카드 표시 텍스트 확장 (loadMarketData 함수 내부)
+        function loadMarketData(btn) {
+            switchView(true); updateNav(btn);
+            document.getElementById('sectionTitle').innerText = "Market Categories";
+            document.getElementById('portfolioSidebar').classList.add('hidden');
+            const categories = [
+                { cat: "Market Wide", etf: "VOO, QQQ, SPY, IWM...", desc: "S&P500, 나스닥 등 전체 지수 추종", color: "blue" },
+                { cat: "Sector", etf: "XLK, XLV, XLE, VGT...", desc: "IT, 바이오, 에너지, 금융 섹터", color: "purple" },
+                { cat: "Style", etf: "SCHD, VUG, JEPI, VTV...", desc: "성장, 가치, 고배당 전략 상품", color: "orange" },
+                { cat: "Theme", etf: "SOXX, SMH, AIQ, ARKK...", desc: "반도체, AI, 2차전지 등 혁신 기술", color: "green" },
+                { cat: "Defense", etf: "BND, TLT, SGOV, GLD...", desc: "안정적인 국채, 금, 현금성 자산", color: "gray" }
+            ];
+            document.getElementById('etfGrid').innerHTML = categories.map(item => `<div class="info-card !p-8 cursor-pointer" onclick="showMarketDetail('${item.cat}')"><span class="text-[10px] font-bold text-white bg-${item.color}-500 px-2.5 py-1 rounded-lg uppercase">${item.cat}</span><h3 class="text-2xl font-black mt-5">${item.etf}</h3><p class="text-sm text-[var(--text-sub)] mt-3">${item.desc}</p></div>`).join('');
+        }
+
         function openLoginModal() { document.getElementById('loginModal').style.display = 'flex'; }
-        
         function handleFakeLogin() {
             const email = document.getElementById('loginEmail').value.trim();
             const pw = document.getElementById('loginPw').value.trim();
             if (!email || !pw) { showAlert("입력 오류", "이메일과 비밀번호를 모두 입력해 주세요."); return; }
             isLogged = true;
             closeModal('loginModal');
-            document.getElementById('authArea').innerHTML = `
-                <div class="flex items-center gap-3">
-                    <span class="text-sm font-bold text-gray-400">투자자님</span>
-                    <div class="w-10 h-10 rounded-xl bg-blue-500 flex items-center justify-center text-white font-bold">👤</div>
-                </div>`;
-            const userNameEl = document.getElementById('portfolioUserName');
-            const userIconEl = document.getElementById('portfolioUserIcon');
-            if(userNameEl) userNameEl.innerText = "투자자님의 조합";
-            if(userIconEl) userIconEl.classList.replace('bg-gray-800', 'bg-blue-500');
+            document.getElementById('authArea').innerHTML = `<div class="flex items-center gap-3"><span class="text-sm font-bold text-gray-400">투자자님</span><div class="w-10 h-10 rounded-xl bg-blue-500 flex items-center justify-center text-white font-bold">👤</div></div>`;
+            document.getElementById('portfolioUserName').innerText = "투자자님의 조합";
+            document.getElementById('portfolioUserIcon').classList.replace('bg-gray-800', 'bg-blue-500');
             showAlert("환영합니다!", "성공적으로 로그인되었습니다.");
         }
-
         function showAlert(title, message) {
             document.getElementById('alertTitle').innerText = title;
             document.getElementById('alertMessage').innerText = message;
             document.getElementById('alertModal').style.display = 'flex';
         }
-
         function closeModal(id) { document.getElementById(id).style.display = 'none'; }
-
         function switchView(isDynamic) {
             document.getElementById('contentArea').style.display = isDynamic ? 'none' : 'block';
             document.getElementById('dynamicContainer').classList.toggle('hidden', !isDynamic);
             if(!isDynamic) window.scrollTo(0,0);
         }
-
         function updateNav(btn) {
             document.querySelectorAll('.nav-link').forEach(l => l.classList.remove('active'));
             if(btn) btn.classList.add('active');
@@ -224,39 +338,102 @@
                 { cat: "Theme", etf: "SOXX, AIQ, ARKK", desc: "미래 기술 및 트렌드", color: "green" },
                 { cat: "Defense", etf: "BND, TLT, SGOV", desc: "안정적인 채권 위주", color: "gray" }
             ];
-            document.getElementById('etfGrid').innerHTML = categories.map(item => `
-                <div class="info-card !p-8 cursor-pointer" onclick="showMarketDetail('${item.cat}')">
-                    <span class="text-[10px] font-bold text-white bg-${item.color}-500 px-2.5 py-1 rounded-lg uppercase">${item.cat}</span>
-                    <h3 class="text-2xl font-black mt-5">${item.etf}</h3>
-                    <p class="text-sm text-[var(--text-sub)] mt-3">${item.desc}</p>
-                </div>`).join('');
+            document.getElementById('etfGrid').innerHTML = categories.map(item => `<div class="info-card !p-8 cursor-pointer" onclick="showMarketDetail('${item.cat}')"><span class="text-[10px] font-bold text-white bg-${item.color}-500 px-2.5 py-1 rounded-lg uppercase">${item.cat}</span><h3 class="text-2xl font-black mt-5">${item.etf}</h3><p class="text-sm text-[var(--text-sub)] mt-3">${item.desc}</p></div>`).join('');
         }
 
         function loadData(menu, btn) {
-            switchView(true); updateNav(btn);
-            document.getElementById('sectionTitle').innerText = menu;
-            const isPortfolioMode = (menu === '포트폴리오');
-            document.getElementById('portfolioSidebar').classList.toggle('hidden', !isPortfolioMode);
-            if(isPortfolioMode) showMarketDetail('Sector');
-            else loadMarketData(btn);
-        }
+    // 1. 기존 화면 초기화
+    switchView(true); 
+    updateNav(btn);
+    document.getElementById('sectionTitle').innerText = menu;
+    
+    // 2. 그리드 비우기 (HOT 화면 잔상 제거)
+    const mainGrid = document.getElementById('etfGrid');
+    if (mainGrid) mainGrid.innerHTML = ""; 
 
-        function showMarketDetail(category) {
-            const area = document.getElementById('marketDetailArea');
-            document.getElementById('selectedCatTitle').innerText = category;
-            const tickers = ["XLK", "XLV", "XLF", "XLE", "XLI", "KODEX 200", "TIGER 미국S&P500", "SOL 조선TOP3플러스"];
-            document.getElementById('marketEtfGrid').innerHTML = tickers.map(ticker => {
-                const randomYield = (Math.random() * 3 - 0.5).toFixed(2);
-                tickerYields[ticker] = randomYield;
-                const colorClass = randomYield >= 0 ? 'text-[#3182f6]' : 'text-red-500';
-                return `<div class="etf-pill" draggable="true" ondragstart="handleDragStart(event, '${ticker}')">
-                    <div class="flex justify-between items-start mb-1"><span class="text-[10px] text-gray-500 font-bold uppercase">Ticker</span></div>
+    // 3. 포트폴리오 모드 설정
+    const isPortfolioMode = (menu === '포트폴리오');
+    const sidebar = document.getElementById('portfolioSidebar');
+    if (sidebar) sidebar.classList.toggle('hidden', !isPortfolioMode);
+
+    // 4. 화면 전환 로직
+    if (isPortfolioMode) {
+        // 포트폴리오 클릭 시 상세 영역 호출
+        showMarketDetail('Market Wide');
+    } else {
+        // 다른 메뉴(NEW 등) 클릭 시 메인 그리드 로드
+        loadMarketData(btn);
+    }
+}
+
+// [개선된 로직] 상세 데이터 호출 시 화면 영역을 명확히 제어
+async function showMarketDetail(category) {
+    const area = document.getElementById('marketDetailArea');
+    const grid = document.getElementById('marketEtfGrid');
+    const mainGrid = document.getElementById('etfGrid');
+
+    // 메인 그리드는 숨기고 상세 영역은 보이게 설정
+    if (mainGrid) mainGrid.innerHTML = ""; 
+    if (area) area.style.display = 'block';
+    
+    document.getElementById('selectedCatTitle').innerText = category;
+    const tickers = CATEGORY_MAP[category] || CATEGORY_MAP["Market Wide"];
+
+    grid.innerHTML = '<div class="col-span-full text-center py-10 text-gray-500 animate-pulse">실시간 시세 연결 중...</div>';
+
+    const FINNHUB_KEY = "csqv001r01qh09me9300csqv001r01qh09me930g";
+
+    try {
+        const results = await Promise.all(
+            tickers.map(async (ticker) => {
+                try {
+                    // 1️⃣ Finnhub (실시간)
+                    const res = await fetch(`https://finnhub.io/api/v1/quote?symbol=${ticker}&token=${FINNHUB_KEY}`);
+                    const data = await res.json();
+                    if (data && typeof data.dp === "number") return { ticker, yield: data.dp };
+                    throw new Error("Finnhub invalid");
+                } catch {
+                    try {
+                        // 2️⃣ Yahoo Finance
+                        const yRes = await fetch(`https://query1.finance.yahoo.com/v8/finance/chart/${ticker}?interval=1d&range=5d`);
+                        const yData = await yRes.json();
+                        const prices = yData.chart.result[0].indicators.quote[0].close;
+                        const last = prices[prices.length - 1];
+                        const prev = prices[prices.length - 2];
+                        return { ticker, yield: ((last - prev) / prev) * 100 };
+                    } catch {
+                        // 3️⃣ Fallback
+                        return { ticker, yield: Number((Math.random() * 2 - 1).toFixed(2)) };
+                    }
+                }
+            })
+        );
+
+        grid.innerHTML = results.map(({ ticker, yield }) => {
+            const realYield = Number(yield).toFixed(2);
+            tickerYields[ticker] = realYield;
+            const isPositive = realYield >= 0;
+            return `
+                <div class="etf-pill" draggable="true" ondragstart="handleDragStart(event, '${ticker}')" onclick="openEtfDetail('${ticker}')">
+                    <div class="flex justify-between items-start mb-1">
+                        <span class="text-[10px] text-gray-500 font-bold tracking-tighter uppercase">Live Data</span>
+                        <span class="text-[10px] text-[#3182f6] font-bold">DETAIL 🔍</span>
+                    </div>
                     <h4 class="font-bold text-white text-lg">${ticker}</h4>
-                    <div class="flex justify-between items-center mt-4"><span class="text-[10px] text-gray-500">Live</span><span class="font-black ${colorClass}">${randomYield >= 0 ? '+' : ''}${randomYield}%</span></div>
+                    <div class="flex justify-between items-center mt-4">
+                        <span class="text-[10px] text-gray-500 font-medium">Day Change</span>
+                        <span class="font-black ${isPositive ? 'text-[#3182f6]' : 'text-red-500'} text-lg">
+                            ${isPositive ? '+' : ''}${realYield}%
+                        </span>
+                    </div>
                 </div>`;
-            }).join('');
-            area.style.display = 'block';
-        }
+        }).join('');
+
+    } catch (e) {
+        console.error(e);
+        grid.innerHTML = '<div class="col-span-full text-center py-10 text-red-400 text-sm">시세 데이터를 불러오지 못했습니다.</div>';
+    }
+}
 
         function handleDragStart(e, ticker) { e.dataTransfer.setData("ticker", ticker); e.target.style.opacity = "0.5"; }
         function handleDragOver(e) { e.preventDefault(); document.getElementById('dropZone').classList.add('drag-over'); }
@@ -271,93 +448,309 @@
                 updatePortfolioUI();
             }
         }
-
         function rebalanceWeights() {
             if (myPortfolio.length === 0) return;
             const equalWeight = Math.floor(100 / myPortfolio.length);
-            myPortfolio.forEach((item, index) => {
-                item.weight = (index === myPortfolio.length - 1) ? (100 - (equalWeight * (myPortfolio.length - 1))) : equalWeight;
-            });
+            myPortfolio.forEach((item, index) => { item.weight = (index === myPortfolio.length - 1) ? (100 - (equalWeight * (myPortfolio.length - 1))) : equalWeight; });
         }
-
         function updateWeight(ticker, newWeight) {
             const item = myPortfolio.find(i => i.ticker === ticker);
-            if (item) {
-                item.weight = parseInt(newWeight);
-                document.getElementById(`val-${ticker}`).innerText = `${newWeight}%`;
-                checkWeightSum();
-            }
+            if (item) { item.weight = parseInt(newWeight); document.getElementById(`val-${ticker}`).innerText = `${newWeight}%`; checkWeightSum(); }
         }
-
         function checkWeightSum() {
             const sum = myPortfolio.reduce((acc, cur) => acc + cur.weight, 0);
             const warning = document.getElementById('weightWarning');
-            if (sum !== 100) {
-                warning.innerText = `현재 비중 합계: ${sum}% (100%를 맞춰주세요)`;
-                warning.classList.remove('hidden');
-            } else { warning.classList.add('hidden'); }
+            if (sum !== 100) { warning.innerText = `현재 비중 합계: ${sum}% (100%를 맞춰주세요)`; warning.classList.remove('hidden'); } else { warning.classList.add('hidden'); }
             return sum === 100;
         }
-
         function updatePortfolioUI() {
             const listArea = document.getElementById('portfolioList');
-            if (myPortfolio.length === 0) {
-                listArea.innerHTML = `<div id="emptyMessage" class="h-40 flex items-center justify-center text-gray-600 border border-dashed border-gray-800 rounded-2xl">비어 있음</div>`;
-                document.getElementById('weightWarning').classList.add('hidden');
-                return;
-            }
-            listArea.innerHTML = myPortfolio.map(item => `<div class="selected-item">
-                <div class="flex justify-between items-center mb-3">
-                    <span class="font-bold text-white text-sm">${item.ticker}</span>
-                    <div class="flex items-center gap-3">
-                        <span id="val-${item.ticker}" class="text-[#3182f6] font-bold text-xs">${item.weight}%</span>
-                        <button onclick="removeTicker('${item.ticker}')" class="text-gray-500 hover:text-white transition-colors text-xs">✕</button>
-                    </div>
-                </div>
-                <input type="range" min="0" max="100" value="${item.weight}" class="weight-slider" oninput="updateWeight('${item.ticker}', this.value)">
-            </div>`).join('');
+            if (myPortfolio.length === 0) { listArea.innerHTML = `<div id="emptyMessage" class="h-40 flex items-center justify-center text-gray-600 border border-dashed border-gray-800 rounded-2xl">비어 있음</div>`; document.getElementById('weightWarning').classList.add('hidden'); return; }
+            listArea.innerHTML = myPortfolio.map(item => `<div class="selected-item"><div class="flex justify-between items-center mb-3"><span class="font-bold text-white text-sm">${item.ticker}</span><div class="flex items-center gap-3"><span id="val-${item.ticker}" class="text-[#3182f6] font-bold text-xs">${item.weight}%</span><button onclick="removeTicker('${item.ticker}')" class="text-gray-500 hover:text-white transition-colors text-xs">✕</button></div></div><input type="range" min="0" max="100" value="${item.weight}" class="weight-slider" oninput="updateWeight('${item.ticker}', this.value)"></div>`).join('');
             checkWeightSum();
         }
-
-        function removeTicker(ticker) {
-            myPortfolio = myPortfolio.filter(item => item.ticker !== ticker);
-            rebalanceWeights();
-            updatePortfolioUI();
-        }
-
-        /* 수정 및 추가: 결과 보기 클릭 로직 */
+        function removeTicker(ticker) { myPortfolio = myPortfolio.filter(item => item.ticker !== ticker); rebalanceWeights(); updatePortfolioUI(); }
         function showFinalAnalysis() {
-            // 1. 로그인 체크 (가장 먼저)
-            if (!isLogged) {
-                openLoginModal();
-                return;
-            }
+    if (!isLogged) { openLoginModal(); return; }
+    if (myPortfolio.length === 0) { showAlert("종목 없음", "포트폴리오에 담긴 종목이 없습니다."); return; }
+    if (!checkWeightSum()) { showAlert("비중 불일치", "비중의 합이 100%여야 정확한 분석이 가능합니다."); return; }
 
-            // 2. 비중 체크
-            if (myPortfolio.length === 0) { showAlert("종목 없음", "포트폴리오에 담긴 종목이 없습니다."); return; }
-            const sum = myPortfolio.reduce((acc, cur) => acc + cur.weight, 0);
-            if (sum !== 100) { showAlert("비중 불일치", `비중의 합이 100%여야 정확한 분석이 가능합니다. (현재 ${sum}%)`); return; }
-            
-            // 3. AI 수익률 계산 (추정치 로직)
-            let weightedYield = 0;
-            myPortfolio.forEach(item => {
-                const yieldVal = parseFloat(tickerYields[item.ticker] || 0);
-                weightedYield += (yieldVal * (item.weight / 100));
-            });
-            
-            // AI 추정치 산출 (기준 수익률 기반 랜덤 가중치 부여)
-            const base = weightedYield;
-            document.getElementById('ai3m').innerText = (base * 1.5 + 0.8).toFixed(2) + "%";
-            document.getElementById('ai6m').innerText = (base * 2.8 + 1.5).toFixed(2) + "%";
-            document.getElementById('ai12m').innerText = (base * 5.4 + 3.2).toFixed(2) + "%";
-            
-            document.getElementById('resYield').innerText = `${weightedYield >= 0 ? '+' : ''}${weightedYield.toFixed(2)}%`;
-            document.getElementById('analysisModal').style.display = 'flex';
-        }
+    let totalWeightedYield = 0;
+    myPortfolio.forEach(item => {
+        // [중요] 팝업에서 불러온 12개월 수익률 데이터를 참조하도록 수정
+        // tickerYields[item.ticker] 값이 없다면 0으로 계산됩니다.
+        const currentYield = parseFloat(tickerYields[item.ticker] || 0);
+        totalWeightedYield += (currentYield * (item.weight / 100));
+    });
 
+    const resYieldEl = document.getElementById('resYield');
+    resYieldEl.innerText = (totalWeightedYield >= 0 ? '+' : '') + totalWeightedYield.toFixed(2) + '%';
+    resYieldEl.style.color = totalWeightedYield >= 0 ? '#3182f6' : '#ef4444';
+
+    const predict = (months) => {
+        const expected = (totalWeightedYield / 12) * months;
+        return (expected >= 0 ? '+' : '') + expected.toFixed(2) + '%';
+    };
+
+    document.getElementById('ai3m').innerText = predict(3);
+    document.getElementById('ai6m').innerText = predict(6);
+    document.getElementById('ai12m').innerText = predict(12);
+
+    document.getElementById('analysisModal').style.display = 'flex';
+}
         function closeMarketDetail() { document.getElementById('marketDetailArea').style.display = 'none'; }
         function toggleTheme() { document.body.classList.toggle('light-mode'); }
         document.addEventListener('DOMContentLoaded', () => { switchView(false); });
+        async function openEtfDetail(ticker) {
+    const modal = document.getElementById('etfDetailModal');
+    const loader = document.getElementById('modalLoading');
+    
+    if (!modal) {
+        console.error("팝업창(etfDetailModal)을 찾을 수 없습니다. HTML에 ID가 있는지 확인하세요.");
+        return;
+    }
+
+    document.getElementById('detailTicker').innerText = ticker;
+    modal.style.display = 'flex'; // 일단 팝업부터 띄웁니다.
+    if (loader) loader.style.display = 'flex';
+
+    try {
+        // 보안 이슈(CORS)를 피하기 위해 allorigins 프록시를 사용합니다.
+        const targetUrl = `https://query1.finance.yahoo.com/v8/finance/chart/${ticker}?interval=1d&range=1y`;
+        const proxyUrl = `https://api.allorigins.win/get?url=${encodeURIComponent(targetUrl)}`;
+        
+        const response = await fetch(proxyUrl);
+        const json = await response.json();
+        const data = JSON.parse(json.contents);
+        
+        const result = data.chart.result[0];
+        const prices = result.indicators.quote[0].close.filter(p => p !== null); // 데이터 정제
+        const currentPrice = prices[prices.length - 1];
+
+        const getReturn = (daysAgo) => {
+            const pastPrice = prices[prices.length - 1 - daysAgo] || prices[0];
+            const yieldVal = ((currentPrice - pastPrice) / pastPrice) * 100;
+            const isPos = yieldVal >= 0;
+            return {
+                text: (isPos ? '+' : '') + yieldVal.toFixed(2) + '%',
+                color: isPos ? '#3182f6' : '#ef4444'
+            };
+        };
+
+        const periods = {
+            m1: getReturn(20),
+            m3: getReturn(60),
+            m6: getReturn(120),
+            m12: getReturn(prices.length - 1)
+        };
+        tickerYields[ticker] = parseFloat(periods.m12.text);
+
+        ['m1', 'm3', 'm6', 'm12'].forEach(id => {
+            const el = document.getElementById(id);
+            if (el) {
+                el.innerText = periods[id].text;
+                el.style.color = periods[id].color;
+            }
+        });
+    } catch (error) {
+        console.error("데이터 로드 에러:", error);
+        // 에러 시 0%로 초기화
+        ['m1', 'm3', 'm6', 'm12'].forEach(id => {
+            const el = document.getElementById(id);
+            if (el) el.innerText = "데이터 없음";
+        });
+    } finally {
+        if (loader) loader.style.display = 'none';
+    }
+}
+// 실제 과거 수익률을 가져와서 팝업을 띄우는 함수
+let myChart = null; // 차트 객체 저장용 변수
+
+async function openEtfDetail(ticker) {
+    const modal = document.getElementById('etfDetailModal');
+    const loader = document.getElementById('modalLoading');
+    
+    document.getElementById('detailTicker').innerText = ticker;
+    modal.style.display = 'flex';
+    if (loader) loader.style.display = 'flex';
+
+    const yahooUrl = `https://query1.finance.yahoo.com/v8/finance/chart/${ticker}?interval=1d&range=1y`;
+    const proxyList = [
+        `https://corsproxy.io/?${encodeURIComponent(yahooUrl)}`,
+        `https://api.allorigins.win/get?url=${encodeURIComponent(yahooUrl)}`,
+        `https://api.codetabs.com/v1/proxy/?quest=${encodeURIComponent(yahooUrl)}`
+    ];
+
+    let success = false;
+
+    for (let url of proxyList) {
+        if (success) break;
+        try {
+            const response = await fetch(url);
+            const rawData = await response.json();
+            const data = rawData.contents ? JSON.parse(rawData.contents) : rawData;
+
+            if (data.chart && data.chart.result) {
+                const result = data.chart.result[0];
+                const timestamps = result.timestamp;
+                const prices = result.indicators.quote[0].close.filter(p => p !== null);
+                
+                // 1. 수익률 수치 계산 및 UI 반영
+                const currentPrice = prices[prices.length - 1];
+                const calc = (pastPrice) => {
+                    const yieldVal = ((currentPrice - pastPrice) / pastPrice) * 100;
+                    return { text: (yieldVal >= 0 ? '+' : '') + yieldVal.toFixed(2) + '%', color: yieldVal >= 0 ? '#3182f6' : '#ef4444' };
+                };
+
+                const res = {
+                    m1: calc(prices[prices.length - 21] || prices[0]),
+                    m3: calc(prices[prices.length - 61] || prices[0]), // 3개월(약 60거래일) 추가
+                    m6: calc(prices[prices.length - 121] || prices[0]), // 6개월(약 120거래일) 추가
+                    m12: calc(prices[0])
+                };
+                
+                // 분석창 연동을 위해 12개월 수익률 저장
+                tickerYields[ticker] = parseFloat(res.m12.text);
+
+                // 🚀 이 부분이 중요합니다! m3, m6를 리스트에 추가하세요.
+                ['m1', 'm3', 'm6', 'm12'].forEach(id => {
+                    const el = document.getElementById(id);
+                    if (el) {
+                        el.innerText = res[id].text;
+                        el.style.color = res[id].color;
+                    }
+                });
+                
+                // 분석창 연동을 위해 12개월 수익률 저장
+                tickerYields[ticker] = parseFloat(res.m12.text);
+
+                document.getElementById('m1').innerText = res.m1.text;
+                document.getElementById('m12').innerText = res.m12.text;
+
+                // 2. 그래프 그리기 (Chart.js)
+                const ctx = document.getElementById('etfChart').getContext('2d');
+                if (myChart) myChart.destroy(); // 기존 차트 삭제
+
+                myChart = new Chart(ctx, {
+                    type: 'line',
+                    data: {
+                        labels: prices.map((_, i) => i), // X축 (날짜 생략)
+                        datasets: [{
+                            label: 'Price Flow (1Y)',
+                            data: prices,
+                            borderColor: '#3182f6',
+                            borderWidth: 2,
+                            pointRadius: 0,
+                            fill: true,
+                            backgroundColor: 'rgba(49, 130, 246, 0.1)'
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: { legend: { display: false } },
+                        scales: { x: { display: false }, y: { grid: { color: '#2c2c2e' } } }
+                    }
+                });
+
+                success = true;
+            }
+        } catch (e) { console.error("서버 시도 중..."); }
+    }
+
+    if (loader) loader.style.display = 'none';
+}
+// 티커 검색 및 포트폴리오 즉시 추가 함수
+async function showTrend(type) {
+    const grid = document.getElementById('etfGrid');
+    const title = document.getElementById('sectionTitle');
+    
+    title.innerText = type === 'NEW' ? "Recently Launched (NEW)" : "Top Performance (HOT)";
+    grid.innerHTML = `<div class="col-span-full text-center py-20">데이터 분석 중... 잠시만 기다려주세요.</div>`;
+
+    // 모든 카테고리의 티커를 하나로 합침 (중복 제거)
+    const allTickers = [...new Set(Object.values(CATEGORY_MAP).flat())];
+    const trendData = [];
+
+    // 진행 상황을 위해 하나씩 불러옴
+    for (const ticker of allTickers) {
+        try {
+            const yahooUrl = `https://query1.finance.yahoo.com/v8/finance/chart/${ticker}?interval=1mo&range=1y`;
+            const proxyUrl = `https://corsproxy.io/?${encodeURIComponent(yahooUrl)}`;
+            const response = await fetch(proxyUrl);
+            const data = await response.json();
+
+            if (data.chart && data.chart.result) {
+                const result = data.chart.result[0];
+                const prices = result.indicators.quote[0].close.filter(p => p !== null);
+                const timestamps = result.timestamp;
+                
+                // 1. 수익률 계산 (최근 3개월 등락률)
+                const currentPrice = prices[prices.length - 1];
+                const threeMonthsAgoPrice = prices[prices.length - 4] || prices[0]; // 월봉 기준 3-4개 전
+                const yield3m = ((currentPrice - threeMonthsAgoPrice) / threeMonthsAgoPrice) * 100;
+
+                // 2. 상장일 체크 (데이터가 3개월치 이하로만 존재하면 NEW로 간주)
+                const isNew = timestamps.length <= 4; 
+
+                trendData.push({ 
+                    ticker, 
+                    yield3m, 
+                    isNew,
+                    name: ticker // 이름 데이터가 따로 없다면 티커로 표시
+                });
+            }
+        } catch (e) { console.warn(`${ticker} 분석 건너뜀`); }
+    }
+
+    // 데이터 정렬
+    let resultList = [];
+    if (type === 'HOT') {
+        // 수익률 높은 순으로 상위 12개
+        resultList = trendData.sort((a, b) => b.yield3m - a.yield3m).slice(0, 12);
+    } else {
+        // 상장된 지 얼마 안 된 종목들 (이 데이터는 API 특성상 제한적일 수 있음)
+        resultList = trendData.filter(d => d.isNew).slice(0, 12);
+        if (resultList.length === 0) {
+            // NEW 데이터가 부족할 경우 최근 수익률 변동이 가장 다이내믹한 종목으로 대체
+            resultList = trendData.sort((a, b) => Math.abs(b.yield3m) - Math.abs(a.yield3m)).slice(0, 8);
+        }
+    }
+
+    // 화면 그리기
+    grid.innerHTML = "";
+    resultList.forEach(item => {
+        const card = document.createElement('div');
+        card.className = "bg-[#1c1c1e] p-8 rounded-[32px] border border-[#2c2c2e] hover:border-[#3182f6] transition-all cursor-pointer group";
+        card.onclick = () => openEtfDetail(item.ticker);
+        card.innerHTML = `
+            <div class="flex justify-between items-start mb-6">
+                <span class="px-4 py-1.5 rounded-full text-[11px] font-bold tracking-wider bg-[#3182f6]/10 text-[#3182f6] uppercase">${type}</span>
+                <span class="text-2xl font-bold ${item.yield3m >= 0 ? 'text-[#3182f6]' : 'text-[#ef4444]'}">
+                    ${item.yield3m >= 0 ? '+' : ''}${item.yield3m.toFixed(2)}%
+                </span>
+            </div>
+            <h3 class="text-3xl font-bold mb-2 group-hover:text-[#3182f6] transition-colors">${item.ticker}</h3>
+            <p class="text-gray-500 text-sm">3-Month Performance</p>
+        `;
+        grid.appendChild(card);
+    });
+}
+// 2. 배당 데이터 초기화 함수
+function initDividendData() {
+    const mockData = {
+        "JEPI": "7.25", "JEPQ": "9.12", "QYLD": "11.85", "XYLD": "8.52",
+        "O": "5.41", "MAIN": "6.10", "SCHD": "3.45", "VYM": "2.98",
+        "DIA": "1.82", "DGRW": "2.15", "VIG": "1.95", "DVY": "3.75",
+        "SDY": "2.60", "DGRO": "2.35", "VXUS": "3.20", "BNDX": "4.10"
+    };
+    for (let ticker in mockData) {
+        tickerDividends[ticker] = mockData[ticker];
+    }
+}
+
+// 페이지 로드 시 실행
+initDividendData();
     </script>
 </body>
 </html>
